@@ -94,8 +94,8 @@ button.ghost:hover{color:var(--danger)}
 .seg button{flex:1;border:none;border-radius:0;background:transparent;padding:9px 6px;font-size:14px;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
 nav{flex:none;background:var(--navbg);border-top:1px solid var(--line);display:flex;
-  padding-bottom:calc(env(safe-area-inset-bottom) * .45);z-index:10}
-nav button{flex:1;border:none;border-radius:0;background:transparent;padding:11px 2px 12px;font-size:13px;color:var(--muted)}
+  padding-bottom:0;z-index:10}
+nav button{flex:1;border:none;border-radius:0;background:transparent;padding:12px 2px 14px;font-size:13px;color:var(--muted)}
 nav button[aria-pressed="true"]{color:var(--accent);font-weight:600;box-shadow:inset 0 2px 0 var(--accent)}
 .hint{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:6px}
 .tag{display:inline-block;font-size:12px;color:var(--accent);background:var(--accent-soft);padding:1px 7px;border-radius:99px}
@@ -156,7 +156,7 @@ details>summary{cursor:pointer;font-size:13px;color:var(--muted);padding:4px 0}
 
 <script>
 const KEY='pt-pay-v1';
-const BUILD='v8';
+const BUILD='v9';
 const STD={pension:4.5,health:3.545,care:12.95,employment:0.9,tax:3.3};
 const DEF={
   settings:{
