@@ -36,6 +36,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%;overflow:hidden;overscroll-behavior:none}
+html{background:var(--navbg)}
 body{
   background:var(--bg); color:var(--ink);
   font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
@@ -43,9 +44,10 @@ body{
   -webkit-text-size-adjust:100%; font-variant-numeric:tabular-nums;
   position:fixed; top:0; right:0; bottom:0; left:0;
   display:flex; flex-direction:column;
+  padding-top:calc(env(safe-area-inset-top) + 8px);
 }
 .wrap{width:100%;max-width:560px;margin:0 auto;flex:1 1 auto;min-height:0;overflow-y:auto;
-  -webkit-overflow-scrolling:touch;padding:calc(14px + env(safe-area-inset-top) * 2) 14px 24px}
+  -webkit-overflow-scrolling:touch;padding:14px 14px 24px}
 h2{font-size:17px;font-weight:600;margin:0 0 10px}
 h3{font-size:14px;font-weight:600;margin:0 0 8px;color:var(--muted)}
 p{margin:0 0 10px}
@@ -154,7 +156,7 @@ details>summary{cursor:pointer;font-size:13px;color:var(--muted);padding:4px 0}
 
 <script>
 const KEY='pt-pay-v1';
-const BUILD='v7';
+const BUILD='v8';
 const STD={pension:4.5,health:3.545,care:12.95,employment:0.9,tax:3.3};
 const DEF={
   settings:{
