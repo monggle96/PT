@@ -19,20 +19,20 @@
 :root{
   --bg:#EDEFF2; --surface:#FFFFFF; --panel:#122236; --panel-ink:#F4F6F8;
   --ink:#141C26; --muted:#66727F; --line:#DBE0E6; --accent:#17458F;
-  --accent-soft:#E6ECF6; --danger:#A32433; --good:#1F6B4A;
+  --accent-soft:#E6ECF6; --danger:#A32433; --good:#1F6B4A; --navbg:#FFFFFF;
   --r:10px;
 }
 :root:not([data-theme="light"]){
   @media (prefers-color-scheme: dark){
     --bg:#0D1116; --surface:#161C24; --panel:#1E4172; --panel-ink:#F2F6FB;
     --ink:#E7ECF1; --muted:#95A1AE; --line:#2A333E; --accent:#6C9BE8;
-    --accent-soft:#1B2836; --danger:#E0707C; --good:#5FBF93;
+    --accent-soft:#1B2836; --danger:#E0707C; --good:#5FBF93; --navbg:#212A36;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0D1116; --surface:#161C24; --panel:#1E4172; --panel-ink:#F2F6FB;
   --ink:#E7ECF1; --muted:#95A1AE; --line:#2A333E; --accent:#6C9BE8;
-  --accent-soft:#1B2836; --danger:#E0707C; --good:#5FBF93;
+  --accent-soft:#1B2836; --danger:#E0707C; --good:#5FBF93; --navbg:#212A36;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%;overflow:hidden;overscroll-behavior:none}
@@ -91,7 +91,7 @@ button.ghost:hover{color:var(--danger)}
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:10px}
 .seg button{flex:1;border:none;border-radius:0;background:transparent;padding:9px 6px;font-size:14px;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
-nav{flex:none;background:var(--surface);border-top:1px solid var(--line);display:flex;
+nav{flex:none;background:var(--navbg);border-top:1px solid var(--line);display:flex;
   padding-bottom:calc(env(safe-area-inset-bottom) * .45);z-index:10}
 nav button{flex:1;border:none;border-radius:0;background:transparent;padding:11px 2px 12px;font-size:13px;color:var(--muted)}
 nav button[aria-pressed="true"]{color:var(--accent);font-weight:600;box-shadow:inset 0 2px 0 var(--accent)}
@@ -154,6 +154,7 @@ details>summary{cursor:pointer;font-size:13px;color:var(--muted);padding:4px 0}
 
 <script>
 const KEY='pt-pay-v1';
+const BUILD='v7';
 const STD={pension:4.5,health:3.545,care:12.95,employment:0.9,tax:3.3};
 const DEF={
   settings:{
@@ -549,7 +550,8 @@ V.settings=()=>{
       <textarea id="bak" placeholder="내보내기를 누르면 여기에 백업 내용이 나옵니다. 불러올 때는 백업 내용을 여기에 붙여넣고 불러오기를 누르세요." style="margin-top:6px"></textarea>
       <div class="row tight" style="margin-top:6px"><button id="exp">내보내기</button><button id="imp">불러오기</button></div>
     </details>
-    <div class="hint">기록은 이 기기의 브라우저에만 저장됩니다. 기기를 바꾸거나 앱을 지우기 전에 파일로 내보내 보관하세요.</div></div>`;
+    <div class="hint">기록은 이 기기의 브라우저에만 저장됩니다. 기기를 바꾸거나 앱을 지우기 전에 파일로 내보내 보관하세요.</div></div>
+  <p class="hint" style="text-align:center">버전 ${BUILD}</p>`;
 };
 
 /* ---------- 파서 ---------- */
