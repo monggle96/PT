@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PT 급여계산기</title>
-<meta name="theme-color" content="#212A36">
+<meta name="theme-color" content="#0D1116">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -36,7 +36,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;overflow:hidden;overscroll-behavior:none}
-html{height:100%;background:var(--navbg)}
+html{height:100%;background:var(--bg)}
 body{
   background:var(--bg); color:var(--ink);
   font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
@@ -47,7 +47,7 @@ body{
   padding-top:calc(env(safe-area-inset-top) + 8px);
 }
 .wrap{width:100%;max-width:560px;margin:0 auto;flex:1 1 auto;min-height:0;overflow-y:auto;
-  -webkit-overflow-scrolling:touch;padding:14px 14px calc(86px + env(safe-area-inset-bottom))}
+  -webkit-overflow-scrolling:touch;padding:14px 14px calc(78px + env(safe-area-inset-bottom))}
 h2{font-size:17px;font-weight:600;margin:0 0 10px}
 h3{font-size:14px;font-weight:600;margin:0 0 8px;color:var(--muted)}
 p{margin:0 0 10px}
@@ -93,11 +93,12 @@ button.ghost:hover{color:var(--danger)}
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:10px}
 .seg button{flex:1;border:none;border-radius:0;background:transparent;padding:9px 6px;font-size:14px;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
-nav{position:fixed;left:0;right:0;bottom:0;background:var(--navbg);
-  border-top:1px solid var(--line);display:flex;
-  padding-bottom:env(safe-area-inset-bottom);z-index:10}
+nav{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));
+  max-width:536px;margin:0 auto;background:var(--navbg);border:1px solid var(--line);
+  border-radius:16px;display:flex;overflow:hidden;z-index:10;
+  box-shadow:0 6px 20px rgba(0,0,0,.28)}
 nav button{flex:1;border:none;border-radius:0;background:transparent;padding:11px 2px 10px;font-size:13px;color:var(--muted)}
-nav button[aria-pressed="true"]{color:var(--accent);font-weight:600;box-shadow:inset 0 2px 0 var(--accent)}
+nav button[aria-pressed="true"]{color:var(--accent);font-weight:600;background:var(--accent-soft)}
 .hint{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:6px}
 .tag{display:inline-block;font-size:12px;color:var(--accent);background:var(--accent-soft);padding:1px 7px;border-radius:99px}
 .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
@@ -157,14 +158,14 @@ details>summary{cursor:pointer;font-size:13px;color:var(--muted);padding:4px 0}
 
 <script>
 const KEY='pt-pay-v1';
-const BUILD='v12';
+const BUILD='v13';
 const STD={pension:4.5,health:3.545,care:12.95,employment:0.9,tax:3.3};
 const DEF={
   settings:{
     base:500000,
     tiers:[{min:0,rate:40},{min:5000000,rate:50},{min:10000000,rate:60}],
     incentives:[{min:4000000,amount:200000,type:'amt'}],
-    mode:'freelance', frRate:3.3, ins:{...STD}, svcPaid:false, showMoney:false
+    mode:'freelance', frRate:3.3, ins:{...STD}, svcPaid:false, showMoney:false, weekStart:0
   },
   sessions:[], sales:[], prefs:{}
 };
@@ -187,6 +188,7 @@ function normalize(){
   db.settings.ins={...STD,...(db.settings.ins||{})};
   db.sessions??=[]; db.sales??=[]; db.prefs??={};
   db.settings.showMoney=(db.settings.showMoney===true);
+  db.settings.weekStart=(db.settings.weekStart===1)?1:0;
   // 구버전(회원 탭) 데이터 이관
   if(db.members&&db.members.length){
     db.sessions.forEach(s=>{
@@ -225,11 +227,14 @@ const ST={done:{t:'진행'},cancelD:{t:'취소·차감'},cancel:{t:'취소'},svc
 function consumes(s){return s.st==='done'||s.st==='cancelD'}
 function billable(s){return s.st==='done'||s.st==='cancelD'||(s.st==='svc'&&!!db.settings.svcPaid)}
 function billCount(list){return list.reduce((a,s)=>a+(billable(s)?s.count:0),0)}
-function ledger(name){
-  const bought=db.sales.filter(s=>s.name===name).reduce((a,s)=>a+(s.sessions||0),0);
-  const done=db.sessions.filter(s=>s.name===name&&consumes(s)).reduce((a,s)=>a+s.count,0);
+function ledgerAt(name,date){
+  const bought=db.sales.filter(s=>s.name===name&&(s.carry||!date||s.date<=date))
+    .reduce((a,s)=>a+(s.sessions||0),0);
+  const done=db.sessions.filter(s=>s.name===name&&consumes(s)&&(!date||s.date<=date))
+    .reduce((a,s)=>a+s.count,0);
   return {bought,done,left:bought-done};
 }
+function ledger(name){return ledgerAt(name,null)}
 function chrono(a,b){return (a.date+' '+(a.time||'99:99')).localeCompare(b.date+' '+(b.time||'99:99'))}
 /* 회원별로 시간순 수업에 등록 회차를 차례로 배정 → 수업별 금액 */
 function allocate(){
@@ -348,7 +353,10 @@ V.pay=()=>{
 V.sessions=()=>{
   const alloc=allocate();
   const [Y,M]=month.split('-').map(Number);
-  const lead=new Date(Y,M-1,1).getDay(), days=new Date(Y,M,0).getDate();
+  const ws=db.settings.weekStart||0;
+  const lead=(new Date(Y,M-1,1).getDay()-ws+7)%7, days=new Date(Y,M,0).getDate();
+  const sunCol=(7-ws)%7;
+  const dowList=[...DOW.slice(ws),...DOW.slice(0,ws)];
   const monthList=db.sessions.filter(s=>s.date.slice(0,7)===month);
   const byDay={};
   monthList.forEach(s=>{(byDay[s.date] ||= []).push(s)});
@@ -359,7 +367,7 @@ V.sessions=()=>{
   for(let d=1;d<=days;d++){
     const key=`${month}-${String(d).padStart(2,'0')}`;
     const cnt=billCount(byDay[key]||[]);
-    cells+=`<button class="d${cnt?' has':''}${(d+lead-1)%7===0?' sun':''}${key===today()?' today':''}"
+    cells+=`<button class="d${cnt?' has':''}${(d+lead-1)%7===sunCol?' sun':''}${key===today()?' today':''}"
       data-day="${key}" aria-pressed="${key===selDate}">${d}<span class="n">${cnt?cnt+'세션':'&nbsp;'}</span></button>`;
   }
   const money=db.settings.showMoney!==false;
@@ -375,7 +383,7 @@ V.sessions=()=>{
       <span class="m">${Y}년 ${M}월 · ${billCount(monthList)}세션</span>
       <button id="calNext" aria-label="다음 달">›</button>
     </div>
-    <div class="cal">${DOW.map((w,i)=>`<div class="dow${i===0?' sun':''}">${w}</div>`).join('')}${cells}</div>
+    <div class="cal">${dowList.map((w,i)=>`<div class="dow${i===sunCol?' sun':''}">${w}</div>`).join('')}${cells}</div>
   </div>
 
   <div class="card">
@@ -386,7 +394,7 @@ V.sessions=()=>{
     ${day.length?day.map(s=>{const a=alloc[s.id]||{cost:0,over:0,rates:[]};
       return `<div class="slot ${s.st}"><div class="tm">${s.time||'--:--'}</div>
       <div class="who"><div class="t">${esc(s.name)}${s.count>1?' · '+s.count+'세션':''}</div>
-      <div class="d">${money?`${won(a.cost)}원${a.rates.length>1?` (${a.rates.map(r=>won(r)).join('+')})`:''}`:ST[s.st].t}${a.over?` · 등록분 초과 ${a.over}세션`:''}</div></div>
+      ${(money||a.over)?`<div class="d">${money?`${won(a.cost)}원${a.rates.length>1?` (${a.rates.map(r=>won(r)).join('+')})`:''}`:''}${a.over?`${money?' · ':''}등록분 초과 ${a.over}세션`:''}</div>`:''}</div>
       <select class="st" data-st="${s.id}">${Object.keys(ST).map(k=>`<option value="${k}" ${s.st===k?'selected':''}>${ST[k].t}</option>`).join('')}</select>
       <button class="ghost" data-del-ses="${s.id}">✕</button></div>`}).join('')
       :'<div class="empty">이 날은 수업이 없습니다.</div>'}
@@ -396,15 +404,10 @@ V.sessions=()=>{
     <h3>이 날에 수업 추가</h3>
     ${names.length?`
     <div class="row tight field">
-      <div style="flex:.9"><label>시간</label><select id="sTime">${timeOptions(selTime)}</select></div>
-      <div style="flex:1.5"><label>회원</label><select id="sMem">${names.map(n=>{const l=ledger(n);
+      <div style="flex:1"><label>시간</label><select id="sTime">${timeOptions(selTime)}</select></div>
+      <div style="flex:1.6"><label>회원</label><select id="sMem">${names.map(n=>{const l=ledgerAt(n,selDate);
         return `<option value="${esc(n)}" ${n===selMem?'selected':''}>${esc(n)} (잔여 ${l.left})</option>`}).join('')}</select></div>
-      <div style="flex:.6"><label>세션</label><input type="number" id="sCnt" value="1" min="1"></div>
     </div>
-    <div class="seg" id="stSeg">${Object.keys(ST).filter(k=>k!=='cancelD').map(k=>
-      `<button data-newst="${k}" aria-pressed="${newSt===k||(newSt==='cancelD'&&k==='cancel')}">${ST[k].t}</button>`).join('')}</div>
-    ${(newSt==='cancel'||newSt==='cancelD')?`<label style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <input type="checkbox" id="stDed" ${newSt==='cancelD'?'checked':''} style="width:auto"> 잔여 회차 차감</label>`:''}
     ${money?'<div class="calc" id="sInfo"></div>':''}
     <button class="primary" id="sAdd" style="width:100%">추가</button>`
     :'<div class="empty">매출 탭에서 회원 등록을 먼저 입력하세요. 등록한 회원이 여기에 나타납니다.</div>'}
@@ -484,7 +487,7 @@ V.members=()=>{
   const names=memberNames();
   return `
   <h2>회원</h2>
-  ${names.length?names.map(n=>{const l=ledger(n);
+  ${names.length?names.map(n=>{const l=ledgerAt(n,today());
     return `<div class="card">
       <div class="hd"><h2>${esc(n)}</h2><span class="left${l.left<=0?' out':''}">잔여 ${l.left}회</span></div>
       <div class="line" style="border-top:1px solid var(--line)">
@@ -523,6 +526,10 @@ V.settings=()=>{
       <button class="ghost" data-del-inc="${i}">✕</button></div>`).join(''):'<div class="empty">설정된 인센티브가 없습니다.</div>'}</div>
     <button id="addInc" style="width:100%">인센티브 추가</button>
     <div class="hint">정률을 고르면 그 달 실적 매출에 퍼센트를 곱해 계산합니다.</div></div>
+  <div class="card"><h3>달력 시작 요일</h3>
+    <div class="seg">
+      <button data-ws="0" aria-pressed="${(s.weekStart||0)===0}">일요일</button>
+      <button data-ws="1" aria-pressed="${s.weekStart===1}">월요일</button></div></div>
   <div class="card"><h3>서비스 세션 수당</h3>
     <div class="seg">
       <button data-svc="0" aria-pressed="${!s.svcPaid}">지급 안 함</button>
@@ -597,24 +604,16 @@ function bind(){
   on('calPrev','click',()=>{const[y,m]=month.split('-').map(Number);month=ym(new Date(y,m-2,1));selDate=null;render()});
   on('calNext','click',()=>{const[y,m]=month.split('-').map(Number);month=ym(new Date(y,m,1));selDate=null;render()});
 
-  const sMem=document.getElementById('sMem'), sCnt=document.getElementById('sCnt'), sInfo=document.getElementById('sInfo');
+  const sMem=document.getElementById('sMem'), sInfo=document.getElementById('sInfo');
   function previewCost(name,cnt){
-    const done=ledger(name).done;
+    const done=ledgerAt(name,selDate).done;
     let cost=0,rates=[];
     for(let k=0;k<cnt;k++){const r=rateAtUnit(name,done+k);cost+=r;rates.push(r)}
     return {cost,rates:[...new Set(rates)]};
   }
   function refreshS(){
     if(!sMem||!sInfo)return;
-    const c=Math.max(1,num(sCnt.value)), name=sMem.value;
-    if(newSt==='cancel'){sInfo.textContent='취소 — 회차 차감 없음, 수당 0원';return}
-    if(newSt==='svc'){
-      const r=db.settings.svcPaid?rateAtUnit(name,ledger(name).done):0;
-      sInfo.textContent=db.settings.svcPaid?`서비스 — ${won(r*c)}원 (회차 차감 없음)`:'서비스 — 회차 차감 없음, 수당 0원';
-      return;
-    }
-    const p=previewCost(name,c);
-    sInfo.textContent=`${p.rates.map(r=>won(r)).join('+')}원 × ${c}세션 = ${won(p.cost)}원`;
+    sInfo.textContent=`세션 단가 ${won(previewCost(sMem.value,1).cost)}원`;
   }
   const sTime=document.getElementById('sTime');
   if(sMem){
@@ -624,12 +623,9 @@ function bind(){
       if(t&&sTime){selTime=t;sTime.value=t}
       refreshS();
     };
-    sCnt.oninput=refreshS;
     if(sTime)sTime.onchange=()=>{selTime=sTime.value};
     refreshS();
   }
-  document.querySelectorAll('[data-newst]').forEach(b=>b.onclick=()=>{newSt=b.dataset.newst;render()});
-  on('stDed','change',e=>{newSt=e.target.checked?'cancelD':'cancel';render()});
   document.querySelectorAll('[data-st]').forEach(sel=>sel.onchange=()=>{
     const s=db.sessions.find(x=>x.id===sel.dataset.st);
     if(s){s.st=sel.value;save();render()}
@@ -637,16 +633,12 @@ function bind(){
   on('sAdd','click',()=>{
     const name=sMem.value;
     if(!name)return;
-    const cnt=Math.max(1,num(sCnt.value));
-    let warn='';
-    if(newSt==='done'||newSt==='cancelD'){
-      const left=ledger(name).left;
-      if(cnt>left) warn=`${name} 회원의 잔여 회차(${left}회)를 넘겨 기록했습니다.`;
-    }
+    const left=ledgerAt(name,selDate).left;
+    const warn=left<1?`${name} 회원의 잔여 세션이 없는 상태로 기록했습니다.`:'';
     selMem=name; selTime=document.getElementById('sTime').value||selTime;
-    db.sessions.push({id:uid(),date:selDate,time:selTime,name,count:cnt,st:newSt});
+    db.sessions.push({id:uid(),date:selDate,time:selTime,name,count:1,st:'done'});
     save();render();
-    toast(warn||`${name} · ${cnt}세션 추가했습니다.`,!!warn);
+    toast(warn||`${name} 수업을 추가했습니다.`,!!warn);
   });
   on('sBulkAdd','click',()=>{
     const lines=document.getElementById('sBulk').value.split('\n').map(l=>l.trim()).filter(Boolean);
@@ -760,6 +752,7 @@ function bind(){
   });
   document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{db.settings.mode=b.dataset.mode;save();render()});
   document.querySelectorAll('[data-svc]').forEach(b=>b.onclick=()=>{db.settings.svcPaid=b.dataset.svc==='1';save();render()});
+  document.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{db.settings.weekStart=+b.dataset.ws;save();render()});
   on('frRate','change',e=>{db.settings.frRate=num(e.target.value);save()});
   document.querySelectorAll('[data-ins]').forEach(i=>i.onchange=()=>{db.settings.ins[i.dataset.ins]=num(i.value);save()});
   on('stdIns','click',()=>{db.settings.ins={...STD};save();render()});
