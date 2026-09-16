@@ -42,7 +42,7 @@ body{
   font-weight:400; font-size:15px; line-height:1.55;
   -webkit-text-size-adjust:100%; font-variant-numeric:tabular-nums;
 }
-.wrap{max-width:560px;margin:0 auto;padding:14px 14px 92px}
+.wrap{max-width:560px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px 92px}
 h2{font-size:17px;font-weight:600;margin:0 0 10px}
 h3{font-size:14px;font-weight:600;margin:0 0 8px;color:var(--muted)}
 p{margin:0 0 10px}
@@ -157,7 +157,7 @@ const DEF={
     base:500000,
     tiers:[{min:0,rate:40},{min:5000000,rate:50},{min:10000000,rate:60}],
     incentives:[{min:4000000,amount:200000,type:'amt'}],
-    mode:'freelance', frRate:3.3, ins:{...STD}, svcPaid:false, showMoney:true
+    mode:'freelance', frRate:3.3, ins:{...STD}, svcPaid:false, showMoney:false
   },
   sessions:[], sales:[], prefs:{}
 };
@@ -179,7 +179,7 @@ function normalize(){
   db.settings={...structuredClone(DEF.settings),...(db.settings||{})};
   db.settings.ins={...STD,...(db.settings.ins||{})};
   db.sessions??=[]; db.sales??=[]; db.prefs??={};
-  db.settings.showMoney=(db.settings.showMoney!==false);
+  db.settings.showMoney=(db.settings.showMoney===true);
   // 구버전(회원 탭) 데이터 이관
   if(db.members&&db.members.length){
     db.sessions.forEach(s=>{
